@@ -111,6 +111,11 @@ impl AppState {
 }
 
 fn name_to_vk(name: &str, vk_names: &HashMap<String, u32>) -> Option<u32> {
+    // 先检查 HashMap（包括 "无" 等多字符名称）
+    if let Some(&vk) = vk_names.get(name) {
+        return Some(vk);
+    }
+    // 再处理单字符输入
     if name.len() == 1 {
         let c = name.chars().next().unwrap();
         if c.is_ascii_alphabetic() {
@@ -120,7 +125,7 @@ fn name_to_vk(name: &str, vk_names: &HashMap<String, u32>) -> Option<u32> {
             return Some(c as u32);
         }
     }
-    vk_names.get(name).copied()
+    None
 }
 
 #[derive(Serialize, Deserialize)]
@@ -198,11 +203,11 @@ fn get_mappings(state: State<AppState>) -> Vec<Mapping> {
     state.mappings.read().unwrap()
         .iter()
         .filter_map(|(from, to)| {
-            let from_name = vk_to_name.get(from)?.clone();
+            let from_name = vk_to_name.get(from).cloned()?;
             let to_name = if *to == 0 {
                 "无".to_string()
             } else {
-                vk_to_name.get(to)?.clone()
+                vk_to_name.get(to).cloned()?
             };
             Some(Mapping { from: from_name, to: to_name })
         })
